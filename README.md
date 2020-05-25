@@ -29,5 +29,5 @@ virtual std::vector<int> GetPrevVertices(int vertex) const = 0;
 
 
 ### Прим.: Граф для тестирования
-``
+
 ![](graph.png)
