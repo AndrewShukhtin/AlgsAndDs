@@ -66,11 +66,7 @@ bool testingFunction(const IGraph& testingGraph){
 
   {
     ArcGraph arcGraph(testingGraph);
-    if (!testNextVertices(testingGraph, arcGraph)) {
-      return false;
-    }
-
-    if (!testPrevVertices(testingGraph, arcGraph)) {
+    if (!testInterfaceFunctions(arcGraph, testingGraph)) {
       return false;
     }
   }
