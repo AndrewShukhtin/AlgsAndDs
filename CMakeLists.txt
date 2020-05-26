@@ -20,3 +20,5 @@ set(GRAPHS_INCLUDE_DIRS
 
 add_executable(main.out project/main.cpp)
 target_include_directories(main.out PRIVATE ${GRAPHS_INCLUDE_DIRS})
+
+add_executable(contest.out project/Contest/Contest.cpp)
