@@ -1,95 +1,77 @@
 #include "ListGraph.hpp"
-#include "MatrixGraph.hpp"
-#include "SetGraph.hpp"
-#include "ArcGraph.hpp"
 
 #include <iostream>
 #include <vector>
+#include <queue>
 
-bool testNextVertices(const IGraph& lhs, const IGraph& rhs) {
-  auto verticesCount = lhs.VerticesCount();
-  for (int i = 0; i < verticesCount; ++i) {
-    auto lhsNextVertices = lhs.GetNextVertices(i);
-    auto rhsNextVertices = rhs.GetNextVertices(i);
-    if (lhsNextVertices != rhsNextVertices) {
-      return false;
+template<class Visit>
+void BFS(const IGraph& graph, int from, Visit visit) {
+  std::vector<bool> visited(graph.VerticesCount(), false);
+
+  std::queue<int> queue;
+  queue.push(from);
+  visited[from] = true;
+  while (!queue.empty()) {
+    auto vertex = queue.front();
+    queue.pop();
+    visit(vertex);
+    auto nextVertices = graph.GetNextVertices(vertex);
+    for (const auto& nextVertex : nextVertices) {
+      if (!visited[nextVertex]) {
+        queue.push(nextVertex);
+        visited[nextVertex] = true;
+      }
     }
   }
-  return true;
 }
 
-bool testPrevVertices(const IGraph& lhs, const IGraph& rhs) {
-  auto verticesCount = lhs.VerticesCount();
-  for (int i = 0; i < verticesCount; ++i) {
-    auto lhsPrevVertices = lhs.GetPrevVertices(i);
-    auto rhsPrevVertices = rhs.GetPrevVertices(i);
-    if (lhsPrevVertices != rhsPrevVertices) {
-      return false;
+int ShortPathCount(const IGraph& graph, int from, int to) {
+  std::vector<int> distance(graph.VerticesCount(), INT_MAX);
+  distance[from] = 0;
+
+  std::vector<int> pathCount(graph.VerticesCount(), 0);
+  pathCount[from] = 1;
+
+  std::queue<int> queue;
+  queue.push(from);
+
+  while (!queue.empty()) {
+    auto currentVertex = queue.front();
+    queue.pop();
+    auto nextVertices = graph.GetNextVertices(currentVertex);
+    for (const auto& nextVertex : nextVertices) {
+      if (distance[nextVertex] == INT_MAX) {
+        distance[nextVertex] = distance[currentVertex] + 1;
+        pathCount[nextVertex] = pathCount[currentVertex];
+        queue.push(nextVertex);
+      } else if (distance[nextVertex] == distance[currentVertex] + 1) {
+        pathCount[nextVertex] += pathCount[currentVertex];
+      }
     }
   }
-  return true;
-}
-
-bool testInterfaceFunctions(const IGraph& lhs, const IGraph& rhs) {
-  if (lhs.VerticesCount() != rhs.VerticesCount()) {
-    return false;
-  }
-
-  if (!testNextVertices(lhs, rhs)) {
-    return false;
-  }
-
-  return testPrevVertices(lhs, rhs);
-}
-
-bool testingFunction(const IGraph& testingGraph){
-  {
-    ListGraph listGraph(testingGraph);
-    if (!testInterfaceFunctions(listGraph, testingGraph)) {
-      return false;
-    }
-  }
-
-  {
-    MatrixGraph matrixGraph(testingGraph);
-    if (!testInterfaceFunctions(matrixGraph, testingGraph)) {
-      return false;
-    }
-  }
-
-  {
-    SetGraph setGraph(testingGraph);
-    if (!testInterfaceFunctions(setGraph, testingGraph)) {
-      return false;
-    }
-  }
-
-  {
-    ArcGraph arcGraph(testingGraph);
-    if (!testInterfaceFunctions(arcGraph, testingGraph)) {
-      return false;
-    }
-  }
-  return true;
+  return pathCount[to];
 }
 
 int main() {
-  ListGraph listGraph(5);
-  listGraph.AddEdge(0, 2);
-  listGraph.AddEdge(1, 0);
-  listGraph.AddEdge(1, 2);
-  listGraph.AddEdge(1, 4);
-  listGraph.AddEdge(2, 3);
-  listGraph.AddEdge(3, 4);
-  listGraph.AddEdge(4, 2);
-  listGraph.AddEdge(4, 3);
+  int vertexCount = 0;
+  std::cin >> vertexCount;
 
+  ListGraph<GraphType::Undirected> listGraph(vertexCount);
 
-  if (!testingFunction(listGraph)) {
-    std::cout << "TEST FAILED" << std::endl;
-  } else {
-    std::cout << "TEST PASSED" << std::endl;
+  int edgesCount = 0;
+  std::cin >> edgesCount;
+
+  for (int i = 0; i < edgesCount; ++i) {
+    int from = 0;
+    int to = 0;
+    std::cin >> from >> to;
+    listGraph.AddEdge(from, to);
   }
+
+  int from = 0;
+  int to = 0;
+  std::cin >> from >> to;
+  std::cout << ShortPathCount(listGraph, from, to) << std::endl;
 
   return 0;
 }

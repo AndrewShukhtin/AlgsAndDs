@@ -7,8 +7,8 @@
 class SetGraph : public IGraph {
 public:
   SetGraph() = default;
-  SetGraph(int vertexCount);
-  SetGraph(const IGraph& rhs);
+  explicit SetGraph(int vertexCount);
+  explicit SetGraph(const IGraph& rhs);
 
   void AddEdge(int from, int to) override;
 

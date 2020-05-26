@@ -3,6 +3,7 @@
 #include "IGraph.hpp"
 
 #include <vector>
+#include <unordered_set>
 
 class ArcGraph : public IGraph {
 public:
@@ -19,4 +20,5 @@ public:
 
 private:
   std::vector<std::pair<int, int>> _adjacencyContainer;
+  std::unordered_set<int> _verticesCount;
 };

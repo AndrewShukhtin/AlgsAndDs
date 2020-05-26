@@ -1,6 +1,6 @@
 #include "ArcGraph.hpp"
 
-#include <set>
+#include <unordered_set>
 
 ArcGraph::ArcGraph(int vertexCount) : _adjacencyContainer(vertexCount) {}
 
@@ -13,15 +13,12 @@ ArcGraph::ArcGraph(const IGraph& rhs) {
 }
 
 void ArcGraph::AddEdge(int from, int to) {
+  _verticesCount.emplace(from);
   _adjacencyContainer.emplace_back(from, to);
 }
 
 int ArcGraph::VerticesCount() const {
-  std::set<int> vertices;
-  for (const auto& [from, _]: _adjacencyContainer)
-    vertices.emplace(from);
-
-  return vertices.size();
+  return _verticesCount.size();
 }
 
 std::vector<int> ArcGraph::GetNextVertices(int vertex) const {

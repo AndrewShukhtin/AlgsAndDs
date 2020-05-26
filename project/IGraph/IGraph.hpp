@@ -2,6 +2,11 @@
 
 #include <vector>
 
+enum class GraphType {
+  Directed,
+  Undirected
+};
+
 class IGraph{
 public:
   virtual ~IGraph()= default;
