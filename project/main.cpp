@@ -2,54 +2,32 @@
 
 #include <iostream>
 #include <vector>
-#include <queue>
+#include <set>
 
-template<class Visit>
-void BFS(const IGraph& graph, int from, Visit visit) {
-  std::vector<bool> visited(graph.VerticesCount(), false);
-
-  std::queue<int> queue;
-  queue.push(from);
-  visited[from] = true;
-  while (!queue.empty()) {
-    auto vertex = queue.front();
-    queue.pop();
-    visit(vertex);
-    auto nextVertices = graph.GetNextVertices(vertex);
-    for (const auto& nextVertex : nextVertices) {
-      if (!visited[nextVertex]) {
-        queue.push(nextVertex);
-        visited[nextVertex] = true;
-      }
-    }
-  }
-}
-
-int ShortPathCount(const IGraph& graph, int from, int to) {
+int shortestPathLenght(const IGraph& graph, int from, int to) {
   std::vector<int> distance(graph.VerticesCount(), INT_MAX);
   distance[from] = 0;
 
-  std::vector<int> pathCount(graph.VerticesCount(), 0);
-  pathCount[from] = 1;
-
-  std::queue<int> queue;
-  queue.push(from);
+  std::set<std::pair<int, int>> queue;
+  queue.emplace(distance[from], from);
 
   while (!queue.empty()) {
-    auto currentVertex = queue.front();
-    queue.pop();
-    auto nextVertices = graph.GetNextVertices(currentVertex);
-    for (const auto& nextVertex : nextVertices) {
-      if (distance[nextVertex] == INT_MAX) {
-        distance[nextVertex] = distance[currentVertex] + 1;
-        pathCount[nextVertex] = pathCount[currentVertex];
-        queue.push(nextVertex);
-      } else if (distance[nextVertex] == distance[currentVertex] + 1) {
-        pathCount[nextVertex] += pathCount[currentVertex];
+    const auto& beginIt = queue.begin();
+    auto currentVertex = beginIt->second;
+    queue.erase(beginIt);
+
+    const auto nextVertices = graph.GetNextVertices(currentVertex);
+    for (const auto& [nextVertex, weight] : nextVertices) {
+      if (distance[nextVertex] > distance[currentVertex] + 1) {
+        if (distance[nextVertex] != INT_MAX) {
+          queue.erase({distance[nextVertex], nextVertex});
+        }
+        distance[nextVertex] = distance[currentVertex] + weight;
+        queue.emplace(distance[nextVertex], nextVertex);
       }
     }
   }
-  return pathCount[to];
+  return distance[to];
 }
 
 int main() {
@@ -64,15 +42,15 @@ int main() {
   for (int i = 0; i < edgesCount; ++i) {
     int from = 0;
     int to = 0;
-    std::cin >> from >> to;
-    listGraph.AddEdge(from, to);
+    int weight = 0;
+    std::cin >> from >> to >> weight;
+    listGraph.AddEdge(from, to, weight);
   }
 
   int from = 0;
   int to = 0;
   std::cin >> from >> to;
-  std::cout << ShortPathCount(listGraph, from, to) << std::endl;
+  std::cout << shortestPathLenght(listGraph, from, to) << std::endl;
 
   return 0;
 }
-

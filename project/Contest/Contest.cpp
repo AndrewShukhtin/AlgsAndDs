@@ -1,6 +1,6 @@
 #include <vector>
 #include <iostream>
-#include <queue>
+#include <set>
 
 enum class GraphType {
   Directed,
@@ -11,14 +11,13 @@ class IGraph{
 public:
   virtual ~IGraph()= default;
 
-  virtual void AddEdge(int from, int to) = 0;
+  virtual void AddEdge(int from, int to, int weight) = 0;
 
-  virtual int VerticesCount() const = 0;
+  [[nodiscard]] virtual int VerticesCount() const = 0;
 
-  virtual std::vector<int> GetNextVertices(int vertex) const = 0;
-  virtual std::vector<int> GetPrevVertices(int vertex) const = 0;
+  [[nodiscard]] virtual std::vector<std::pair<int, int>> GetNextVertices(int vertex) const = 0;
+  [[nodiscard]] virtual std::vector<std::pair<int, int>> GetPrevVertices(int vertex) const = 0;
 };
-
 //========================================================================================
 
 template <GraphType Type = GraphType::Directed>
@@ -27,61 +26,48 @@ public:
   ListGraph() = default;
   explicit ListGraph(int vertexCount);
 
-  explicit ListGraph(const IGraph& rhs);
+  void AddEdge(int from, int to, int weight) override ;
 
-  void AddEdge(int from, int to) override;
+  [[nodiscard]] int VerticesCount() const override;
 
-  int VerticesCount() const override;
-
-  std::vector<int> GetNextVertices(int vertex) const override;
-  std::vector<int> GetPrevVertices(int vertex) const override;
+  [[nodiscard]] std::vector<std::pair<int, int>> GetNextVertices(int vertex) const override;
+  [[nodiscard]] std::vector<std::pair<int, int>> GetPrevVertices(int vertex) const override;
 
 private:
-  std::vector<std::vector<int>> _adjacencyLists;
+  std::vector<std::vector<std::pair<int, int>>> _adjacencyLists;
 };
-
 
 template <GraphType Type>
 ListGraph<Type>::ListGraph(int vertexCount) : _adjacencyLists(vertexCount) {}
-
-
-template <GraphType Type>
-ListGraph<Type>::ListGraph(const IGraph& rhs) : _adjacencyLists(rhs.VerticesCount()) {
-  for (int i = 0; i < rhs.VerticesCount(); ++i) {
-    _adjacencyLists[i] = rhs.GetNextVertices(i);
-  }
-}
-
 
 template <GraphType Type>
 int ListGraph<Type>::VerticesCount() const {
   return _adjacencyLists.size();
 }
 
-
 template <GraphType Type>
-void ListGraph<Type>::AddEdge(int from, int to) {
+void ListGraph<Type>::AddEdge(int from, int to, int weight) {
   if constexpr (Type == GraphType::Directed) {
-    _adjacencyLists[from].push_back(to);
+    _adjacencyLists[from].emplace_back(to, weight);
   } else {
-    _adjacencyLists[from].push_back(to);
-    _adjacencyLists[to].push_back(from);
+    _adjacencyLists[from].emplace_back(to, weight);
+    _adjacencyLists[to].emplace_back(from, weight);
   }
 }
 
 template <GraphType Type>
-std::vector<int> ListGraph<Type>::GetNextVertices(int vertex) const {
+std::vector<std::pair<int, int>> ListGraph<Type>::GetNextVertices(int vertex) const {
   return _adjacencyLists[vertex];
 }
 
 template <GraphType Type>
-std::vector<int> ListGraph<Type>::GetPrevVertices(int vertex) const {
-  std::vector<int> res;
+std::vector<std::pair<int, int>> ListGraph<Type>::GetPrevVertices(int vertex) const {
+  std::vector<std::pair<int, int>> res;
   for (int i = 0; i < VerticesCount(); ++i) {
     const auto nextVertices = GetNextVertices(i);
-    for (const auto& nextVertex : nextVertices) {
+    for (const auto& [nextVertex, weight] : nextVertices) {
       if (nextVertex == vertex) {
-        res.push_back(i);
+        res.emplace_back(i, weight);
       }
     }
   }
@@ -90,31 +76,30 @@ std::vector<int> ListGraph<Type>::GetPrevVertices(int vertex) const {
 
 //========================================================================================
 
-int ShortPathCount(const IGraph& graph, int from, int to) {
+int shortestPathLenght(const IGraph& graph, int from, int to) {
   std::vector<int> distance(graph.VerticesCount(), INT_MAX);
   distance[from] = 0;
 
-  std::vector<int> pathCount(graph.VerticesCount(), 0);
-  pathCount[from] = 1;
-
-  std::queue<int> queue;
-  queue.push(from);
+  std::set<std::pair<int, int>> queue;
+  queue.emplace(distance[from], from);
 
   while (!queue.empty()) {
-    auto currentVertex = queue.front();
-    queue.pop();
-    auto nextVertices = graph.GetNextVertices(currentVertex);
-    for (const auto& nextVertex : nextVertices) {
-      if (distance[nextVertex] == INT_MAX) {
-        distance[nextVertex] = distance[currentVertex] + 1;
-        pathCount[nextVertex] = pathCount[currentVertex];
-        queue.push(nextVertex);
-      } else if (distance[nextVertex] == distance[currentVertex] + 1) {
-        pathCount[nextVertex] += pathCount[currentVertex];
+    const auto& beginIt = queue.begin();
+    auto currentVertex = beginIt->second;
+    queue.erase(beginIt);
+
+    const auto nextVertices = graph.GetNextVertices(currentVertex);
+    for (const auto& [nextVertex, weight] : nextVertices) {
+      if (distance[nextVertex] > distance[currentVertex] + weight) {
+        if (distance[nextVertex] != INT_MAX) {
+          queue.erase({distance[nextVertex], nextVertex});
+        }
+        distance[nextVertex] = distance[currentVertex] + weight;
+        queue.emplace(distance[nextVertex], nextVertex);
       }
     }
   }
-  return pathCount[to];
+  return distance[to];
 }
 
 int main() {
@@ -129,14 +114,15 @@ int main() {
   for (int i = 0; i < edgesCount; ++i) {
     int from = 0;
     int to = 0;
-    std::cin >> from >> to;
-    listGraph.AddEdge(from, to);
+    int weight = 0;
+    std::cin >> from >> to >> weight;
+    listGraph.AddEdge(from, to, weight);
   }
 
   int from = 0;
   int to = 0;
   std::cin >> from >> to;
-  std::cout << ShortPathCount(listGraph, from, to) << std::endl;
+  std::cout << shortestPathLenght(listGraph, from, to) << std::endl;
 
   return 0;
 }

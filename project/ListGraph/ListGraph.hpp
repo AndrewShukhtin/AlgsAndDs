@@ -8,61 +8,48 @@ public:
   ListGraph() = default;
   explicit ListGraph(int vertexCount);
 
-  explicit ListGraph(const IGraph& rhs);
+  void AddEdge(int from, int to, int weight) override ;
 
-  void AddEdge(int from, int to) override;
+  [[nodiscard]] int VerticesCount() const override;
 
-  int VerticesCount() const override;
-
-  std::vector<int> GetNextVertices(int vertex) const override;
-  std::vector<int> GetPrevVertices(int vertex) const override;
+  [[nodiscard]] std::vector<std::pair<int, int>> GetNextVertices(int vertex) const override;
+  [[nodiscard]] std::vector<std::pair<int, int>> GetPrevVertices(int vertex) const override;
 
 private:
-  std::vector<std::vector<int>> _adjacencyLists;
+  std::vector<std::vector<std::pair<int, int>>> _adjacencyLists;
 };
-
 
 template <GraphType Type>
 ListGraph<Type>::ListGraph(int vertexCount) : _adjacencyLists(vertexCount) {}
-
-
-template <GraphType Type>
-ListGraph<Type>::ListGraph(const IGraph& rhs) : _adjacencyLists(rhs.VerticesCount()) {
-  for (int i = 0; i < rhs.VerticesCount(); ++i) {
-    _adjacencyLists[i] = rhs.GetNextVertices(i);
-  }
-}
-
 
 template <GraphType Type>
 int ListGraph<Type>::VerticesCount() const {
   return _adjacencyLists.size();
 }
 
-
 template <GraphType Type>
-void ListGraph<Type>::AddEdge(int from, int to) {
+void ListGraph<Type>::AddEdge(int from, int to, int weight) {
   if constexpr (Type == GraphType::Directed) {
-    _adjacencyLists[from].push_back(to);
+    _adjacencyLists[from].emplace_back(to, weight);
   } else {
-    _adjacencyLists[from].push_back(to);
-    _adjacencyLists[to].push_back(from);
+    _adjacencyLists[from].emplace_back(to, weight);
+    _adjacencyLists[to].emplace_back(from, weight);
   }
 }
 
 template <GraphType Type>
-std::vector<int> ListGraph<Type>::GetNextVertices(int vertex) const {
+std::vector<std::pair<int, int>> ListGraph<Type>::GetNextVertices(int vertex) const {
   return _adjacencyLists[vertex];
 }
 
 template <GraphType Type>
-std::vector<int> ListGraph<Type>::GetPrevVertices(int vertex) const {
-  std::vector<int> res;
+std::vector<std::pair<int, int>> ListGraph<Type>::GetPrevVertices(int vertex) const {
+  std::vector<std::pair<int, int>> res;
   for (int i = 0; i < VerticesCount(); ++i) {
     const auto nextVertices = GetNextVertices(i);
-    for (const auto& nextVertex : nextVertices) {
+    for (const auto& [nextVertex, weight] : nextVertices) {
       if (nextVertex == vertex) {
-        res.push_back(i);
+        res.emplace_back(i, weight);
       }
     }
   }
